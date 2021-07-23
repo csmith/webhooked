@@ -1,6 +1,6 @@
 module github.com/csmith/webhooked
 
-go 1.14
+go 1.16
 
 require (
 	github.com/google/go-github/v30 v30.0.0
