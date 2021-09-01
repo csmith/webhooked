@@ -115,7 +115,7 @@ version: '3.7'
 
 services:
   webhooked:
-    image: csmith/webhooked
+    image: ghcr.io/csmith/webhooked
     environment:
       TOKEN: your_personal_access_token
       URL: https://example.com/your_webhook
