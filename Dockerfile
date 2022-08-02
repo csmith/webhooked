@@ -1,4 +1,4 @@
-FROM golang:1.18.4 AS build
+FROM golang:1.18.5 AS build
 WORKDIR /app
 COPY . /app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /go/bin/webhooked .
