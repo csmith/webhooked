@@ -7,7 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/google/go-github/v30 v30.1.0
 	github.com/kouhin/envflag v0.0.0-20150818174321-0e9a86061649
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/oauth2 v0.29.0
 )
 
 require (
