@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/google/go-github/v30/github"
-	"github.com/kouhin/envflag"
+	"github.com/csmith/envflag/v2"
+	"github.com/google/go-github/v72/github"
 	"golang.org/x/oauth2"
 	"log"
+	"slices"
 	"strings"
 	"time"
 )
@@ -29,9 +30,7 @@ type Hooker struct {
 }
 
 func main() {
-	if err := envflag.Parse(); err != nil {
-		log.Panicf("Error parsing flags: %v\n", err)
-	}
+	envflag.Parse()
 
 	if *token == "" || *url == "" {
 		flag.Usage()
@@ -48,10 +47,10 @@ func main() {
 		ctx:    context.Background(),
 		client: github.NewClient(tc),
 		hook: &github.Hook{
-			Config: map[string]interface{}{
-				"url":          *url,
-				"content_type": *contentType,
-				"secret":       *secret,
+			Config: &github.HookConfig{
+				URL:         url,
+				ContentType: contentType,
+				Secret:      secret,
 			},
 			Events: strings.Split(*events, ","),
 		},
@@ -105,7 +104,7 @@ func (h *Hooker) checkHooks() error {
 
 func (h *Hooker) validHook(hook *github.Hook) bool {
 	// Of the config parameters, URL must be the same already and secret is blanked, leaving just content_type.
-	if hook.Config["content_type"] != h.hook.Config["content_type"] {
+	if *hook.Config.ContentType != *h.hook.Config.ContentType {
 		return false
 	}
 
@@ -116,14 +115,7 @@ func (h *Hooker) validHook(hook *github.Hook) bool {
 	// If the lengths are equal, then every one of the installed events should appear in our desired list.
 	// We don't care about order, so iterate through them all to check.
 	for _, installed := range hook.Events {
-		found := false
-		for _, desired := range h.hook.Events {
-			if installed == desired {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !slices.Contains(h.hook.Events, installed) {
 			return false
 		}
 	}
@@ -139,10 +131,21 @@ type Repo struct {
 // listRepositories lists all repositories owned by the user
 func (h *Hooker) listRepositories() (repos []Repo, err error) {
 	err = crawlPages(func(listOptions github.ListOptions) (*github.Response, error) {
-		list, res, err := h.client.Repositories.List(h.ctx, *owner, &github.RepositoryListOptions{
-			Type:        "owner",
-			ListOptions: listOptions,
-		})
+		var list []*github.Repository
+		var res *github.Response
+		var err error
+
+		if *owner == "" {
+			list, res, err = h.client.Repositories.ListByAuthenticatedUser(h.ctx, &github.RepositoryListByAuthenticatedUserOptions{
+				Type:        "owner",
+				ListOptions: listOptions,
+			})
+		} else {
+			list, res, err = h.client.Repositories.ListByUser(h.ctx, *owner, &github.RepositoryListByUserOptions{
+				Type:        "owner",
+				ListOptions: listOptions,
+			})
+		}
 
 		if err != nil {
 			return nil, err
@@ -188,7 +191,7 @@ func (h *Hooker) findHook(repo Repo) (*github.Hook, error) {
 	}
 
 	for i := range hooks {
-		if hooks[i].Config["url"] == h.hook.Config["url"] {
+		if *hooks[i].Config.URL == *h.hook.Config.URL {
 			return hooks[i], nil
 		}
 	}

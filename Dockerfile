@@ -1,8 +1,14 @@
 FROM golang:1.24.3 AS build
-WORKDIR /app
-COPY . /app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /go/bin/webhooked .
+WORKDIR /go/src/app
+COPY . .
 
-FROM gcr.io/distroless/base-debian10
-COPY --from=build /go/bin/webhooked /
-CMD ["/webhooked"]
+RUN --mount=type=cache,target=/go/pkg/mod \
+    set -eux; \
+    CGO_ENABLED=0 GO111MODULE=on go install .; \
+    go run github.com/google/go-licenses@latest save ./... --save_path=/notices; \
+    mkdir -p /mounts/data;
+
+FROM ghcr.io/greboid/dockerbase/nonroot:1.20250326.0
+COPY --from=build /go/bin/webhooked /webhooked
+COPY --from=build /notices /notices
+ENTRYPOINT ["/webhooked"]

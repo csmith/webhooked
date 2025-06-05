@@ -1,16 +1,11 @@
 module github.com/csmith/webhooked
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.3
 
 require (
-	github.com/google/go-github/v30 v30.1.0
-	github.com/kouhin/envflag v0.0.0-20150818174321-0e9a86061649
+	github.com/csmith/envflag/v2 v2.0.0
+	github.com/google/go-github/v72 v72.0.0
 	golang.org/x/oauth2 v0.30.0
 )
 
-require (
-	github.com/google/go-querystring v1.0.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
-)
+require github.com/google/go-querystring v1.1.0 // indirect
