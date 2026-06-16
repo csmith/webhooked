@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/csmith/envflag/v2"
 	"github.com/google/go-github/v87/github"
-	"golang.org/x/oauth2"
 	"log"
 	"slices"
 	"strings"
@@ -37,15 +36,14 @@ func main() {
 		return
 	}
 
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: *token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
+	client, err := github.NewClient(github.WithAuthToken(*token))
+	if err != nil {
+		panic(err)
+	}
 
 	hooker := &Hooker{
 		ctx:    context.Background(),
-		client: github.NewClient(tc),
+		client: client,
 		hook: &github.Hook{
 			Config: &github.HookConfig{
 				URL:         url,
